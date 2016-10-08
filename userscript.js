@@ -2,17 +2,17 @@
 // ==UserScript==
 // @name        SoundCloud Downloader
 // @namespace	http://www.dieterholvoet.com
-// @author	Dieter Holvoet
+// @author	    Dieter Holvoet
 // @description	Adds a direct download button to all the tracks on SoundCloud  (works with the new SoundCloud interface)
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js
-// @include     http://www.soundcloud.com/*
-// @include	http://soundcloud.com/*
-// @include	https://www.soundcloud.com/*
-// @include	https://soundcloud.com/*
+// @include	    http://www.soundcloud.com/*
+// @include	    http://soundcloud.com/*
+// @include	    https://www.soundcloud.com/*
+// @include	    https://soundcloud.com/*
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_openInTab
-// @version	0.5
+// @version	0.6
 // ==/UserScript==
 //-----------------------------------------------------------------------------------
 
@@ -20,26 +20,6 @@ jQuery.noConflict();
 (function ($) {
 
     $(function () {
-        /** Append stylesheet */
-        $("head").append(
-            '<style>' +
-            '.sc-button-scd:before {' +
-            'content: "";' +
-            'display: block;' +
-            'position: absolute;' +
-            'background-repeat: no-repeat;' +
-            'background-position: center center;' +
-            'width: 20px;' +
-            'height: 20px;' +
-            'top: 0;' +
-            'bottom: 0;' +
-            'margin: auto 0;' +
-            'left: 5px;' +
-            'background-size: 16px 16px;' +
-            'background-image: url("'+getIcon()+'"); ' +
-            'text-indent: 19px;' +
-            '} ' +
-            '</style>');
 
         /** Append download buttons */
         setInterval(function () {
@@ -200,10 +180,10 @@ jQuery.noConflict();
 
             /** Check presence of external free download link */
         } else if(hasExternalFreeDownload($parent)) {
-            var $buylink = $parent.parent().find('.soundActions__purchaseLink'),
-                $button = makeButton($parent, $buylink.prop('href'), size, iconOnly);
+            var $freedllink = $parent.parent().find('.soundActions__purchaseLink');
 
-            $buylink.remove();
+            makeDownloadButton($parent, $freedllink.prop('href'), size, iconOnly);
+            $freedllink.remove();
 
             /** Check URL */
         } else if(!isValidTrackURL(url)) {
@@ -211,13 +191,21 @@ jQuery.noConflict();
 
             /** Fetch download URL */
         } else {
-            makeButton($parent, url, size, iconOnly);
+            makeDownloadButton($parent, url, size, iconOnly);
+        }
+
+        /** Check presence of external stream/buy link */
+        if(hasExternalBuyLink($parent)) {
+            var $buylink = $parent.parent().find('.soundActions__purchaseLink');
+
+            makeBuyButton($parent, $buylink.prop('href'), size, iconOnly);
+            $buylink.remove();
         }
 
         $parent.prop('dl-checked', true);
     }
 
-    function makeButton($parent, url, size, iconOnly) {
+    function makeDownloadButton($parent, url, size, iconOnly) {
         $button = $('<a class="sc-button sc-button-'+size+' sc-button-responsive sc-button-download'+(iconOnly ? ' sc-button-icon' : '')+'" title="Download ' + title + '" >Download</a>');
 
         if(isValidTrackURL(url)) {
@@ -243,8 +231,10 @@ jQuery.noConflict();
         return $button;
     }
 
-    function getIcon() {
-        return "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGl0bGU+UmVjdGFuZ2xlIDMxPC90aXRsZT48cGF0aCBkPSJNMyAxMXYyaDEwdi0ySDN6bTAtN2gxMGwtNSA2LTUtNnptMy0ydjJoNFYySDZ6IiBmaWxsPSIjMjIyIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=";
+    function makeBuyButton($parent, url, size, iconOnly) {
+        $button = $('<a href="'+url+'" target="_blank" class="sc-button sc-button-'+size+' sc-button-responsive sc-button-buy'+(iconOnly ? ' sc-button-icon' : '')+'" title="Buy ' + title + '" >Buy</a>');
+        $button.appendTo($parent.eq(0));
+        return $button;
     }
 
     function cleanTitle(title) {
@@ -290,15 +280,34 @@ jQuery.noConflict();
     function hasExternalFreeDownload($item) {
         var $buylink = $item.parent().find('.soundActions__purchaseLink').eq(0),
             strings = ['free download', 'free dl'],
-            websites = ['theartistunion', 'toneden', 'artistsunlimited.co', 'melodicsoundsnetwork.com', 'edmlead.net'],
+            websites = ['theartistunion', 'toneden', 'artistsunlimited.co', 'melodicsoundsnetwork.com', 'edmlead.net', 'click.dj', 'woox.agency', 'hypeddit.com', 'hive.co'],
             hasExternalFreeDownload = false;
 
         if($buylink.exists()) {
-            strings.forEach(function(elem, i, array) {
+            strings.forEach(function(elem) {
                 if($buylink.text().toLowerCase().indexOf(elem) !== -1) hasExternalFreeDownload = true;
             });
 
-            websites.forEach(function(elem, i, array) {
+            websites.forEach(function(elem) {
+                if($buylink.attr('href').toLowerCase().indexOf(elem) !== -1) hasExternalFreeDownload = true;
+            });
+        }
+
+        return hasExternalFreeDownload;
+    }
+
+    function hasExternalBuyLink($item) {
+        var $buylink = $item.parent().find('.soundActions__purchaseLink').eq(0),
+            strings = ['buy', 'spotify', 'beatport', 'juno', 'stream'],
+            websites = ['lnk.to', 'open.spotify.com', 'spoti.fi', 'junodownload.com', 'beatport.com', 'itunes.apple.com', 'play.google.com', 'deezer.com', 'napster.com', 'music.microsoft.com'],
+            hasExternalFreeDownload = false;
+
+        if($buylink.exists()) {
+            strings.forEach(function(elem) {
+                if($buylink.text().toLowerCase().indexOf(elem) !== -1) hasExternalFreeDownload = true;
+            });
+
+            websites.forEach(function(elem) {
                 if($buylink.attr('href').toLowerCase().indexOf(elem) !== -1) hasExternalFreeDownload = true;
             });
         }
