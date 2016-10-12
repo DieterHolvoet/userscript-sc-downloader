@@ -9,10 +9,9 @@
 // @include	    http://soundcloud.com/*
 // @include	    https://www.soundcloud.com/*
 // @include	    https://soundcloud.com/*
-// @grant       GM_getValue
-// @grant       GM_setValue
+// @grant       GM_addStyle
 // @grant       GM_openInTab
-// @version	0.6
+// @version	0.7
 // ==/UserScript==
 //-----------------------------------------------------------------------------------
 
@@ -20,6 +19,15 @@ jQuery.noConflict();
 (function ($) {
 
     $(function () {
+
+        /** Append stylesheet */
+        var icon_buy = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAQAAACR313BAAAAg0lEQVQY02NgIAzU/qtuxSP9/4zOdxkhPAqcPqr9R4Uo5gXdRZd2eIwknXoAXXrZJiTp0tmokl6f/hsjSXfm4dHLwLDZUv+3y5fYN5VPZ907cO3leRS9QK/x/d/7f8H/5v9p/z3+a//nw/Ca6laYVxAsJOB6z/UeOgvZ+An/J6CzKAUAAatiLSilSl4AAAAASUVORK5CYII=";
+
+        GM_addStyle(
+            ".sc-button-small.sc-button-buy:before, .sc-button-medium.sc-button-buy:before {" +
+                "background-image: url("+icon_buy+")" +
+            "}"
+        );
 
         /** Append download buttons */
         setInterval(function () {
@@ -182,7 +190,7 @@ jQuery.noConflict();
         } else if(hasExternalFreeDownload($parent)) {
             var $freedllink = $parent.parent().find('.soundActions__purchaseLink');
 
-            makeDownloadButton($parent, $freedllink.prop('href'), size, iconOnly);
+            makeDownloadButton($parent, $freedllink.prop('href'), size, iconOnly, true);
             $freedllink.remove();
 
             /** Check URL */
@@ -191,7 +199,7 @@ jQuery.noConflict();
 
             /** Fetch download URL */
         } else {
-            makeDownloadButton($parent, url, size, iconOnly);
+            makeDownloadButton($parent, url, size, iconOnly, false);
         }
 
         /** Check presence of external stream/buy link */
@@ -205,8 +213,8 @@ jQuery.noConflict();
         $parent.prop('dl-checked', true);
     }
 
-    function makeDownloadButton($parent, url, size, iconOnly) {
-        $button = $('<a class="sc-button sc-button-'+size+' sc-button-responsive sc-button-download'+(iconOnly ? ' sc-button-icon' : '')+'" title="Download ' + title + '" >Download</a>');
+    function makeDownloadButton($parent, url, size, isIconOnly, isExternal) {
+        $button = $('<a class="sc-button sc-button-'+size+' sc-button-responsive sc-button-download'+(isIconOnly ? ' sc-button-icon' : '')+'" title="Download ' + title + '" >Download'+ (isExternal ? ' (external)' : '') +'</a>');
 
         if(isValidTrackURL(url)) {
             url = "https://mrvv.net/scdl/scdlSC.php?url=" + url;
