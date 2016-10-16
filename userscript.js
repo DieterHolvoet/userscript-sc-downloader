@@ -11,7 +11,7 @@
 // @include	    https://soundcloud.com/*
 // @grant       GM_addStyle
 // @grant       GM_openInTab
-// @version	0.7
+// @version	0.8
 // ==/UserScript==
 //-----------------------------------------------------------------------------------
 
@@ -57,7 +57,7 @@ jQuery.noConflict();
                 title = cleanTitle($(".soundTitle__title").eq(0).text());
                 url = document.location.href;
 
-                appendButton($(".listenEngagement__footer"), url, 'medium', false);
+                appendButton($(".sound__footer"), url, 'medium', false);
             }
 
 
