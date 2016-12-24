@@ -25,7 +25,7 @@ jQuery.noConflict();
 
         GM_addStyle(
             ".sc-button-small.sc-button-buy:before, .sc-button-medium.sc-button-buy:before {" +
-                "background-image: url("+icon_buy+")" +
+            "background-image: url("+icon_buy+")" +
             "}"
         );
 
@@ -221,6 +221,10 @@ jQuery.noConflict();
     function makeDownloadButton($parent, url, size, isIconOnly, isExternal) {
         $button = $('<a class="sc-button sc-button-'+size+' sc-button-responsive sc-button-download'+(isIconOnly ? ' sc-button-icon' : '')+'" title="Download ' + title + '" >Download'+ (isExternal ? ' (external)' : '') +'</a>');
 
+        // Remove exit.sc from URL
+        url = (new URL(url).search.match(/(?:\?|&)url=([^&]+)/) || [])[1];
+        url = decodeURIComponent(url);
+
         if(isValidTrackURL(url)) {
             url = "https://mrvv.net/scdl/scdlSC.php?url=" + url;
 
@@ -230,7 +234,7 @@ jQuery.noConflict();
                         console.error("Fetching download URL failed: " + data.error + " ("+this.url+")");
 
                     } else {
-                        GM_openInTab("https://mrvv.net/scdl/scdlDL.php?url=" + data.dlfileurl, true)
+                        GM_openInTab("https://mrvv.net/scdl/scdlDL.php?url=" + data.dlfileurl, true);
                     }
                 }, "json");
             });
@@ -258,7 +262,7 @@ jQuery.noConflict();
 
     function cleanURL(url) {
         url = url.split(/[?#]/)[0]; // Strip query string
-        url = relativeToAbsoluteURL(url);
+        url = relativeToAbsoluteURL(url); // Convert to an absolute url if necessary
         return url;
     }
 
