@@ -39,11 +39,12 @@ jQuery.noConflict();
              * */
 
             $(".trackList").find(".trackList__item").each(function () {
-                $item = $(this).find(".trackItem__trackTitle").eq(0);
-                title = cleanTitle($item.text());
-                url = $item.attr("href");
+                var $item = $(this).find(".trackItem__trackTitle").eq(0),
+                    title = cleanTitle($item.text()),
+                    url = $item.attr("href"),
+                    id = ""; // TODO: Fetch ID
 
-                appendButton($(this), url, 'small', true);
+                appendButton($(this), url, title, id, 'small', true);
             });
 
 
@@ -53,15 +54,15 @@ jQuery.noConflict();
              * */
 
             if($(".listenDetails .commentsList").exists()) {
-
-                title = cleanTitle($(".soundTitle__title").eq(0).text());
-                url = document.location.href;
+                var title = cleanTitle($(".soundTitle__title").eq(0).text()),
+                    url = document.location.href,
+                    id = ""; // TODO: Fetch ID
 
                 if($(".listenEngagement__footer").exists()) {
-                    appendButton($(".listenEngagement__footer"), url, 'medium', false);
+                    appendButton($(".listenEngagement__footer"), url, title, id, 'medium', false);
 
                 } else {
-                    appendButton($(".sound__footer"), url, 'medium', false);
+                    appendButton($(".sound__footer"), url, title, id, 'medium', false);
                 }
             }
 
@@ -75,14 +76,31 @@ jQuery.noConflict();
              *
              * Overview
              * https://soundcloud.com/you/collection
+             *
+             * User tracks page
+             * https://soundcloud.com/lexer/tracks
              * */
 
             $(".lazyLoadingList").find(".soundList__item").each(function () {
                 if (!$(this).find(".sound").is(".playlist")) {
-                    title = cleanTitle($(this).find(".soundTitle__title").eq(0).text());
-                    url = $(this).find(".soundTitle__title").eq(0).attr("href");
+                    var title = cleanTitle($(this).find(".soundTitle__title").eq(0).text()),
+                        url = $(this).find(".soundTitle__title").eq(0).attr("href"),
+                        id = "";
 
-                    appendButton($(this), url, 'small', false);
+                    // Find ID
+                    $(this).find(".sc-artwork").each(function() {
+                        var bg = $(this).css("background-image"),
+                            results = /artworks-([a-zA-Z0-9]+)-0/.exec(bg);
+
+                        if(results != null && results.length > 0) {
+                            id = results[1];
+                        }
+                    });
+
+                    if(typeof id == "undefined")
+                        console.error("Couldn't find the ID of this song: ", $(this));
+
+                    appendButton($(this), url, title, id, 'small', false);
                 }
             });
 
@@ -93,11 +111,12 @@ jQuery.noConflict();
              * */
 
             $(".chartTracks").find(".chartTracks__item > .chartTrack").each(function () {
-                $item = $(this).find(".chartTrack__title a").eq(0);
-                title = cleanTitle($item.text());
-                url = $item.attr("href");
+                var $item = $(this).find(".chartTrack__title a").eq(0),
+                    title = cleanTitle($item.text()),
+                    url = $item.attr("href"),
+                    id = ""; // TODO: Fetch ID
 
-                appendButton($(this), url, 'small', true);
+                appendButton($(this), url, title, id, 'small', true);
             });
 
 
@@ -107,11 +126,12 @@ jQuery.noConflict();
              * */
 
             $(".historicalPlays").find(".historicalPlays__item").each(function () {
-                $item = $(this).find("a.soundTitle__title").eq(0);
-                title = cleanTitle($item.text());
-                url = $item.attr("href");
+                var $item = $(this).find("a.soundTitle__title").eq(0),
+                    title = cleanTitle($item.text()),
+                    url = $item.attr("href"),
+                    id = ""; // TODO: Fetch ID
 
-                appendButton($(this), url, 'small', false);
+                appendButton($(this), url, title, id, 'small', false);
             });
 
 
@@ -122,10 +142,11 @@ jQuery.noConflict();
 
             $(".userStream").find(".soundList__item > .userStreamItem").each(function () {
                 if (!$(this).find(".sound").is(".playlist")) {
-                    title = cleanTitle($(this).find(".soundTitle__title").eq(0).text());
-                    url = $(this).find(".soundTitle__title").eq(0).attr("href");
+                    var title = cleanTitle($(this).find(".soundTitle__title").eq(0).text()),
+                        url = $(this).find(".soundTitle__title").eq(0).attr("href"),
+                        id = ""; // TODO: Fetch ID
 
-                    appendButton($(this), url, 'small', false);
+                    appendButton($(this), url, title, id, 'small', false);
                 }
             });
 
@@ -137,10 +158,11 @@ jQuery.noConflict();
 
             $(".searchList").find(".searchList__item").each(function () {
                 if ($(this).find(".sound").is(".track")) {
-                    title = cleanTitle($(this).find(".soundTitle__title").eq(0).text());
-                    url = $(this).find(".soundTitle__title").eq(0).attr("href");
+                    var title = cleanTitle($(this).find(".soundTitle__title").eq(0).text()),
+                        url = $(this).find(".soundTitle__title").eq(0).attr("href"),
+                        id = ""; // TODO: Fetch ID
 
-                    appendButton($(this), url, 'small', false);
+                    appendButton($(this), url, title, id, 'small', false);
 
                 } else if ($(this).find(".sound").is(".playlist")) {
                     // TO DO: Download playlist
@@ -150,7 +172,7 @@ jQuery.noConflict();
         }, 2000);
     });
 
-    function appendButton($parent, url, size, iconOnly) {
+    function appendButton($parent, url, title, id, size, iconOnly) {
 
         /** Find button-group and test for preview-only/geoblocked tracks */
         var $small = $parent.find('.soundActions .sc-button-group-small'),
@@ -195,7 +217,7 @@ jQuery.noConflict();
         } else if(hasExternalFreeDownload($parent)) {
             var $freedllink = $parent.parent().find('.soundActions__purchaseLink');
 
-            makeDownloadButton($parent, $freedllink.prop('href'), size, iconOnly, true);
+            makeDownloadButton($parent, $freedllink.prop('href'), title, id, size, iconOnly, true);
             $freedllink.remove();
 
             /** Check URL */
@@ -204,31 +226,37 @@ jQuery.noConflict();
 
             /** Fetch download URL */
         } else {
-            makeDownloadButton($parent, url, size, iconOnly, false);
+            makeDownloadButton($parent, url, title, id, size, iconOnly, false);
         }
 
         /** Check presence of external stream/buy link */
         if(hasExternalBuyLink($parent)) {
             var $buylink = $parent.parent().find('.soundActions__purchaseLink');
 
-            makeBuyButton($parent, $buylink.prop('href'), size, iconOnly);
+            makeBuyButton($parent, $buylink.prop('href'), title, size, iconOnly);
             $buylink.remove();
         }
 
         $parent.prop('dl-checked', true);
     }
 
-    function makeDownloadButton($parent, url, size, isIconOnly, isExternal) {
-        $button = $('<a class="sc-button sc-button-'+size+' sc-button-responsive sc-button-download'+(isIconOnly ? ' sc-button-icon' : '')+'" title="Download ' + title + '" >Download'+ (isExternal ? ' (external)' : '') +'</a>');
+    function makeDownloadButton($parent, url, title, id, size, isIconOnly, isExternal) {
+        $button = $('<a class="sc-button sc-button-'+size+' sc-button-responsive sc-button-download'+(isIconOnly ? ' sc-button-icon' : '')+'" sc-id="'+id+'" title="Download ' + title + '" >Download'+ (isExternal ? ' (external)' : '') +'</a>');
 
         // Remove exit.sc from URL
-        url = (new URL(url).search.match(/(?:\?|&)url=([^&]+)/) || [])[1];
-        url = decodeURIComponent(url);
+        if(url.indexOf("exit.sc") !== -1) {
+            url = (new URL(url).search.match(/(?:\?|&)url=([^&]+)/) || [])[1];
+            url = decodeURIComponent(url);
+        }
 
         if(isValidTrackURL(url)) {
             url = "https://mrvv.net/scdl/scdlSC.php?url=" + url;
 
             $button.on("click", function() {
+                var id = $(this).attr('sc-id');
+                if(typeof id != "undefined" && id.length > 0)
+                    makeGritter(id, title)
+
                 $.get(url, function (data) {
                     if (data.hasOwnProperty('error')) {
                         console.error("Fetching download URL failed: " + data.error + " ("+this.url+")");
@@ -248,7 +276,7 @@ jQuery.noConflict();
         return $button;
     }
 
-    function makeBuyButton($parent, url, size, iconOnly) {
+    function makeBuyButton($parent, url, title, size, iconOnly) {
         $button = $('<a href="'+url+'" target="_blank" class="sc-button sc-button-'+size+' sc-button-responsive sc-button-buy'+(iconOnly ? ' sc-button-icon' : '')+'" title="Buy ' + title + '" >Buy</a>');
         $button.appendTo($parent.eq(0));
         return $button;
@@ -337,6 +365,21 @@ jQuery.noConflict();
             return 'https://soundcloud.com'+url;
         else
             return url;
+    }
+
+    function makeGritter(id, title) {
+        var $wrapper = $("#gritter-notice-wrapper");
+
+        if(!$wrapper.exists()) {
+            $(document).find('body').append('<div id="gritter-notice-wrapper" class="top-right"></div>');
+            $wrapper = $("#gritter-notice-wrapper")
+        }
+
+        $wrapper.append('<div id="gritter-item" class="gritter-item-wrapper"><div class="gritter-top"></div><div class="gritter-item"><div class="gritter-close" style="display: none;"></div><img src="https://i1.sndcdn.com/artworks-'+id+'-0-t50x50.jpg" class="gritter-image"><div class="gritter-with-image">Download of <span class="gritter-title">'+title+'</span><p> will start in a moment.</p></div><div style="clear:both"></div></div><div class="gritter-bottom"></div></div>');
+
+        setTimeout(function() {
+            $("#gritter-item").fadeOut();
+        }, 2000);
     }
 
     $.fn.exists = function () {
