@@ -11,7 +11,7 @@
 // @include	    https://soundcloud.com/*
 // @grant       GM_addStyle
 // @grant       GM_openInTab
-// @version	1.0
+// @version	1.1
 // ==/UserScript==
 //-----------------------------------------------------------------------------------
 
@@ -19,6 +19,10 @@ jQuery.noConflict();
 (function ($) {
 
     $(function () {
+
+        $.fn.exists = function () {
+            return this.length !== 0;
+        };
 
         /** Append stylesheet */
         var icon_buy = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAQAAACR313BAAAAg0lEQVQY02NgIAzU/qtuxSP9/4zOdxkhPAqcPqr9R4Uo5gXdRZd2eIwknXoAXXrZJiTp0tmokl6f/hsjSXfm4dHLwLDZUv+3y5fYN5VPZ907cO3leRS9QK/x/d/7f8H/5v9p/z3+a//nw/Ca6laYVxAsJOB6z/UeOgvZ+An/J6CzKAUAAatiLSilSl4AAAAASUVORK5CYII=";
@@ -40,11 +44,14 @@ jQuery.noConflict();
 
             $(".trackList").find(".trackList__item").each(function () {
                 var $item = $(this).find(".trackItem__trackTitle").eq(0),
-                    title = cleanTitle($item.text()),
-                    url = $item.attr("href"),
-                    id = ""; // TODO: Fetch ID
+                    data = {
+                        title: cleanTitle($item.text()),
+                        url: $item.attr("href"),
+                        id: "" // TODO: Fetch ID
+                    },
+                    track = new SoundCloudTrack($(this), data);
 
-                appendButton($(this), url, title, id, 'small', true);
+                track.appendButton('small', true);
             });
 
 
@@ -54,16 +61,15 @@ jQuery.noConflict();
              * */
 
             if($(".listenDetails .commentsList").exists()) {
-                var title = cleanTitle($(".soundTitle__title").eq(0).text()),
-                    url = document.location.href,
-                    id = ""; // TODO: Fetch ID
+                var $el = ($(".listenEngagement__footer").exists() ? $(".listenEngagement__footer") : $(".sound__footer")),
+                    data = {
+                        title: cleanTitle($(".soundTitle__title").eq(0).text()),
+                        url: document.location.href,
+                        id: "" // TODO: Fetch ID
+                    },
+                    track = new SoundCloudTrack($el, data);
 
-                if($(".listenEngagement__footer").exists()) {
-                    appendButton($(".listenEngagement__footer"), url, title, id, 'medium', false);
-
-                } else {
-                    appendButton($(".sound__footer"), url, title, id, 'medium', false);
-                }
+                track.appendButton('medium', false);
             }
 
 
@@ -83,24 +89,14 @@ jQuery.noConflict();
 
             $(".lazyLoadingList").find(".soundList__item").each(function () {
                 if (!$(this).find(".sound").is(".playlist")) {
-                    var title = cleanTitle($(this).find(".soundTitle__title").eq(0).text()),
-                        url = $(this).find(".soundTitle__title").eq(0).attr("href"),
-                        id = "";
+                    var data = {
+                            title: cleanTitle($(this).find(".soundTitle__title").eq(0).text()),
+                            url: $(this).find(".soundTitle__title").eq(0).attr("href"),
+                            id: ""
+                        },
+                        track = new SoundCloudTrack($(this), data);
 
-                    // Find ID
-                    $(this).find(".sc-artwork").each(function() {
-                        var bg = $(this).css("background-image"),
-                            results = /artworks-([a-zA-Z0-9]+)-0/.exec(bg);
-
-                        if(results != null && results.length > 0) {
-                            id = results[1];
-                        }
-                    });
-
-                    if(typeof id == "undefined")
-                        console.error("Couldn't find the ID of this song: ", $(this));
-
-                    appendButton($(this), url, title, id, 'small', false);
+                    track.appendButton('small', false);
                 }
             });
 
@@ -112,11 +108,13 @@ jQuery.noConflict();
 
             $(".chartTracks").find(".chartTracks__item > .chartTrack").each(function () {
                 var $item = $(this).find(".chartTrack__title a").eq(0),
-                    title = cleanTitle($item.text()),
-                    url = $item.attr("href"),
-                    id = ""; // TODO: Fetch ID
+                    data = {
+                        title: $item.text(),
+                        url: $item.attr("href")
+                    },
+                    track = new SoundCloudTrack($(this), data);
 
-                appendButton($(this), url, title, id, 'small', true);
+                track.appendButton('small', true);
             });
 
 
@@ -127,11 +125,13 @@ jQuery.noConflict();
 
             $(".historicalPlays").find(".historicalPlays__item").each(function () {
                 var $item = $(this).find("a.soundTitle__title").eq(0),
-                    title = cleanTitle($item.text()),
-                    url = $item.attr("href"),
-                    id = ""; // TODO: Fetch ID
+                    data = {
+                        title: cleanTitle($item.text()),
+                        url: $item.attr("href")
+                    },
+                    track = new SoundCloudTrack($(this), data);
 
-                appendButton($(this), url, title, id, 'small', false);
+                track.appendButton('small', false);
             });
 
 
@@ -142,11 +142,13 @@ jQuery.noConflict();
 
             $(".userStream").find(".soundList__item > .userStreamItem").each(function () {
                 if (!$(this).find(".sound").is(".playlist")) {
-                    var title = cleanTitle($(this).find(".soundTitle__title").eq(0).text()),
-                        url = $(this).find(".soundTitle__title").eq(0).attr("href"),
-                        id = ""; // TODO: Fetch ID
+                    var data = {
+                            title: cleanTitle($(this).find(".soundTitle__title").eq(0).text()),
+                            url: $(this).find(".soundTitle__title").eq(0).attr("href")
+                        },
+                        track = new SoundCloudTrack($(this), data);
 
-                    appendButton($(this), url, title, id, 'small', false);
+                    track.appendButton('small', false);
                 }
             });
 
@@ -158,11 +160,14 @@ jQuery.noConflict();
 
             $(".searchList").find(".searchList__item").each(function () {
                 if ($(this).find(".sound").is(".track")) {
-                    var title = cleanTitle($(this).find(".soundTitle__title").eq(0).text()),
-                        url = $(this).find(".soundTitle__title").eq(0).attr("href"),
-                        id = ""; // TODO: Fetch ID
+                    var $item = $(this).find(".soundTitle__title").eq(0),
+                        data = {
+                            title: $item.text(),
+                            url: $item.attr("href")
+                        },
+                        track = new SoundCloudTrack($(this), data);
 
-                    appendButton($(this), url, title, id, 'small', false);
+                    track.appendButton('small', false);
 
                 } else if ($(this).find(".sound").is(".playlist")) {
                     // TO DO: Download playlist
@@ -170,220 +175,315 @@ jQuery.noConflict();
             });
 
         }, 2000);
-    });
 
-    function appendButton($parent, url, title, id, size, iconOnly) {
+        function SoundCloudGritter(track, title, isError, timeout) {
+            var $wrapper = $("#gritter-notice-wrapper"),
+                $gritters = $(".gritter-item-wrapper"),
+                id = 'gritter-item-'+$gritters.length+1,
+                $gritter = $('<div id="'+id+'" class="gritter-item-wrapper'+(isError ? ' error' : '')+'"><div class="gritter-top"></div><div class="gritter-item"><div class="gritter-close" style="display: none;"></div>'+(isError && track.findID() ? '' : '<img src="'+track.getArtworkURL(50)+'" class="gritter-image">')+'<div class="gritter-with-image">'+title+'<div style="clear:both"></div></div><div class="gritter-bottom"></div></div>');
 
-        /** Find button-group and test for preview-only/geoblocked tracks */
-        var $small = $parent.find('.soundActions .sc-button-group-small'),
-            $medium = $parent.find('.soundActions .sc-button-group-medium');
-
-        if($small.exists()) {
-            $parent = $small;
-
-        } else if($medium.exists()) {
-            $parent = $medium;
-
-        } else {
-            if($parent.prop('dl-checked')) return;
-
-            if(isPreview($parent)) {
-                console.error("Track is preview-only, can't be downloaded: " + url);
-                $parent.prop('dl-checked', true);
-
-            } else if(isGeoblocked($parent)) {
-                console.error("Track is geoblocked, can't be downloaded: " + url);
-                $parent.prop('dl-checked', true);
-
-            } else {
-                console.error("No button-group found. Please verify selector.");
+            if(!$wrapper.exists()) {
+                $(document).find('body').append('<div id="gritter-notice-wrapper" class="top-right"></div>');
+                $wrapper = $($wrapper.selector)
             }
 
-            return;
+            $wrapper.append($gritter);
+
+            setTimeout(function() {
+                $("#"+id).fadeOut();
+            }, timeout);
         }
 
+        function SoundCloudTrack($el, data) {
 
-        /** Return if already checked */
-        if($parent.prop('dl-checked')) return;
+            // Set $el
+            this.$el = $el;
 
-        /** Clean URL */
-        url = cleanURL(url);
+            // Set title
+            if('title' in data)
+                this.title = cleanTitle(data.title);
+            else
+                console.error("Missing title.", this);
 
-        /** Check presence of download button */
-        if($parent.find(".sc-button-download").length > 0) {
-            console.error("Download button already present.");
+            // Set url
+            if('url' in data && isValidTrackURL(cleanURL(data.url)))
+                this.url = cleanURL(data.url);
+            else
+                console.error("Missing or invalid track url.", this);
 
-            /** Check presence of external free download link */
-        } else if(hasExternalFreeDownload($parent)) {
-            var $freedllink = $parent.parent().find('.soundActions__purchaseLink');
+            // Set id
+            data.id = this.findID();
 
-            makeDownloadButton($parent, $freedllink.prop('href'), title, id, size, iconOnly, true);
-            $freedllink.remove();
-
-            /** Check URL */
-        } else if(!isValidTrackURL(url)) {
-            console.error("Track URL is invalid: " + url);
-
-            /** Fetch download URL */
-        } else {
-            makeDownloadButton($parent, url, title, id, size, iconOnly, false);
+            if('id' in data)
+                this.id = data.id;
+            else
+                console.error("Couldn't find the ID of this song: ", this);
         }
 
-        /** Check presence of external stream/buy link */
-        if(hasExternalBuyLink($parent)) {
-            var $buylink = $parent.parent().find('.soundActions__purchaseLink');
+        SoundCloudTrack.prototype.findButtonGroup = function() {
+            var $small = this.$el.find('.soundActions .sc-button-group-small'),
+                $medium = this.$el.find('.soundActions .sc-button-group-medium');
 
-            makeBuyButton($parent, $buylink.prop('href'), title, size, iconOnly);
-            $buylink.remove();
-        }
+            if($small.exists()) {
+                return $small;
 
-        $parent.prop('dl-checked', true);
-    }
+            } else if($medium.exists()) {
+                return $medium;
 
-    function makeDownloadButton($parent, url, title, id, size, isIconOnly, isExternal) {
-        $button = $('<a class="sc-button sc-button-'+size+' sc-button-responsive sc-button-download'+(isIconOnly ? ' sc-button-icon' : '')+'" sc-id="'+id+'" title="Download ' + title + '" >Download'+ (isExternal ? ' (external)' : '') +'</a>');
+            } else {
+                return false;
+            }
+        };
 
-        // Remove exit.sc from URL
-        if(url.indexOf("exit.sc") !== -1) {
-            url = (new URL(url).search.match(/(?:\?|&)url=([^&]+)/) || [])[1];
-            url = decodeURIComponent(url);
-        }
+        SoundCloudTrack.prototype.findID = function() {
+            if(exists(this.id))
+                return this.id;
 
-        if(isValidTrackURL(url)) {
-            url = "https://mrvv.net/scdl/scdlSC.php?url=" + url;
+            var id = false,
+                track = this;
 
-            $button.on("click", function() {
-                var id = $(this).attr('sc-id');
-                if(typeof id != "undefined" && id.length > 0)
-                    makeGritter(id, title)
+            this.$el.find(".sc-artwork").each(function() {
+                var bg = $(this).css("background-image"),
+                    results = /artworks-([a-zA-Z0-9]+)-/.exec(bg);
 
-                $.get(url, function (data) {
-                    if (data.hasOwnProperty('error')) {
-                        console.error("Fetching download URL failed: " + data.error + " ("+this.url+")");
-
-                    } else {
-                        GM_openInTab("https://mrvv.net/scdl/scdlDL.php?url=" + data.dlfileurl, true);
-                    }
-                }, "json");
+                if(results != null && results.length > 0) {
+                    id = results[1];
+                }
             });
 
-        } else {
-            $button.attr("href", url);
-            $button.attr("target", '_blank');
+            if(id) {
+                this.id = id;
+            }
+
+            return id;
+        };
+
+        SoundCloudTrack.prototype.makeDownloadButton = function(url, size, isIconOnly, isExternal) {
+            var $button = $('<a class="sc-button sc-button-'+size+' sc-button-responsive sc-button-download'+(isIconOnly ? ' sc-button-icon' : '')+'" sc-id="'+this.id+'" title="Download ' + this.title + '" >Download'+ (isExternal ? ' (external)' : '') +'</a>'),
+                track = this;
+
+            // Remove exit.sc from URL
+            if(url.indexOf("exit.sc") !== -1) {
+                url = (new URL(url).search.match(/(?:\?|&)url=([^&]+)/) || [])[1];
+                url = decodeURIComponent(url);
+            }
+
+            if(!isExternal && isValidTrackURL(url)) {
+                url = "https://mrvv.net/scdl/scdlSC.php?url=" + url;
+
+                $button.on("click", function() {
+                    var id = $(this).attr('sc-id');
+                    if(exists(id))
+                        new SoundCloudGritter(track, 'Download of <span class="gritter-title">'+track.title+'</span> will start in a moment.</div>', false, 3000);
+
+                    $.get(url, function (data) {
+                        if (data.hasOwnProperty('error')) {
+                            var message = data.error;
+
+                            if(track.isGeoblocked())
+                                message = "not available in your country.";
+                            else if(track.isGO())
+                                message = "only for SoundCloud GO users.";
+
+                            new SoundCloudGritter(track, 'Download of <span class="gritter-title">'+track.title+'</span> failed: '+message, true, 8000);
+                            console.error("Download failed: " + message, track);
+
+                        } else {
+                            GM_openInTab("https://mrvv.net/scdl/scdlDL.php?url=" + data.dlfileurl, true);
+                        }
+                    }, "json");
+                });
+
+            } else {
+                $button.attr("href", url);
+                $button.attr("target", '_blank');
+            }
+
+            this.findButtonGroup().eq(0).append($button);
+            return $button;
+        };
+
+        SoundCloudTrack.prototype.makeBuyButton = function(url, size, iconOnly) {
+            var $button = $('<a href="'+url+'" target="_blank" class="sc-button sc-button-'+size+' sc-button-responsive sc-button-buy'+(iconOnly ? ' sc-button-icon' : '')+'" title="Buy ' + this.title + '" >Buy</a>');
+            this.findButtonGroup().eq(0).append($button);
+            return $button;
+        };
+
+        SoundCloudTrack.prototype.appendButton = function(size, iconOnly) {
+
+            // Set checked
+            if(this.isChecked())
+                return;
+            else
+                this.setChecked(true);
+
+            /** Find and check button group **/
+            if(!this.findButtonGroup()) {
+                if(this.isPreview()) {
+                    console.error("Track is preview-only, can't be downloaded: " + url);
+
+                } else if(this.isGeoblocked()) {
+                    console.error("Track is geoblocked, can't be downloaded: " + url);
+
+                } else {
+                    console.error("No button-group found. Please verify selector.");
+                }
+
+                return;
+            }
+
+            // Append download button
+            if(this.findButtonGroup().find(".sc-button-download").exists()) {
+                /** Check presence of download button */
+                // console.error("Download button already present.");
+
+            } else if(this.findExternalFreeDownload()) {
+                /** Check presence of external free download link */
+                this.makeDownloadButton(this.findExternalFreeDownload().prop('href'), size, iconOnly, true);
+                this.findExternalFreeDownload().remove();
+
+            } else {
+                /** Fetch download URL */
+                this.makeDownloadButton(this.url, size, iconOnly, false);
+            }
+
+            // Append buy button
+            var $external = this.findExternalBuyLink();
+            if($external) {
+                this.makeBuyButton($external.prop('href'), size, iconOnly);
+                $external.remove();
+            }
+        };
+
+        SoundCloudTrack.prototype.findExternalFreeDownload = function() {
+            if(exists(this.$freedl))
+                return this.$freedl;
+
+            var $freedl = this.$el.parent().find('.soundActions__purchaseLink').eq(0),
+                strings = ['free download', 'free dl'],
+                websites = ['theartistunion', 'toneden', 'artistsunlimited.co', 'melodicsoundsnetwork.com', 'edmlead.net', 'click.dj', 'woox.agency', 'hypeddit.com', 'hive.co'],
+                hasExternalFreeDownload = false;
+
+            if($freedl.exists()) {
+                strings.forEach(function(elem) {
+                    if($freedl.text().toLowerCase().indexOf(elem) !== -1)
+                        hasExternalFreeDownload = true;
+                });
+
+                websites.forEach(function(elem) {
+                    if($freedl.attr('href').toLowerCase().indexOf(elem) !== -1)
+                        hasExternalFreeDownload = true;
+                });
+            }
+
+            if(hasExternalFreeDownload) {
+                this.$freedl = $freedl;
+                return $freedl;
+
+            } else {
+                return false;
+            }
+        };
+
+        SoundCloudTrack.prototype.findExternalBuyLink = function() {
+            var $buylink = this.$el.find('.soundActions__purchaseLink').eq(0),
+                strings = ['buy', 'spotify', 'beatport', 'juno', 'stream'],
+                websites = ['lnk.to', 'open.spotify.com', 'spoti.fi', 'junodownload.com', 'beatport.com', 'itunes.apple.com', 'play.google.com', 'deezer.com', 'napster.com', 'music.microsoft.com'],
+                hasExternalBuyLink = false;
+
+            if($buylink.exists()) {
+                strings.forEach(function(elem) {
+                    if($buylink.text().toLowerCase().indexOf(elem) !== -1)
+                        hasExternalBuyLink = true;
+                });
+
+                websites.forEach(function(elem) {
+                    if($buylink.attr('href').toLowerCase().indexOf(elem) !== -1)
+                        hasExternalBuyLink = true;
+                });
+            }
+
+            if(hasExternalBuyLink) {
+                return $buylink;
+
+            } else {
+                return false;
+            }
+        };
+
+        SoundCloudTrack.prototype.setChecked = function(checked) {
+            this.$el.attr('checked', checked);
+        };
+
+        SoundCloudTrack.prototype.isChecked = function(checked) {
+            return typeof this.$el.attr('checked') != 'undefined';
+        };
+
+        SoundCloudTrack.prototype.isGeoblocked = function() {
+            if(this.$el.find(".g-geoblocked-icon").exists()) {
+                return true;
+
+            } else if(this.$el.parent("trackItem__additional").find(".g-geoblocked-icon").exists()) {
+                return true;
+            }
+
+            return false;
+        };
+
+        SoundCloudTrack.prototype.isPreview = function() {
+            var $item = $([]);
+
+            if(this.$el.find(".sc-snippet-badge").exists()) {
+                $item = $item.find(".sc-snippet-badge");
+
+            } else if(this.$el.parent("trackItem__additional").find(".sc-snippet-badge").exists()) {
+                $item = $item.parent("trackItem__additional").find(".sc-snippet-badge");
+            }
+
+            return $item.eq(0).text() === "Preview";
+        };
+
+        SoundCloudTrack.prototype.isGO = function() {
+            return this.$el.find('.g-go-marker-artwork').exists();
+        };
+
+        SoundCloudTrack.prototype.getArtworkURL = function(size) {
+            return 'https://i1.sndcdn.com/artworks-'+this.id+'-0-t'+size+'x'+size+'.jpg'
+        };
+
+        /*
+         HELPERS
+         */
+
+        function exists(thing) {
+            return (typeof thing != "undefined" || thing != null || ($.isArray(thing) && thing.length > 0))
         }
 
-        $button.appendTo($parent.eq(0));
-        return $button;
-    }
-
-    function makeBuyButton($parent, url, title, size, iconOnly) {
-        $button = $('<a href="'+url+'" target="_blank" class="sc-button sc-button-'+size+' sc-button-responsive sc-button-buy'+(iconOnly ? ' sc-button-icon' : '')+'" title="Buy ' + title + '" >Buy</a>');
-        $button.appendTo($parent.eq(0));
-        return $button;
-    }
-
-    function cleanTitle(title) {
-        title = title.replace(/"/g, "'");
-        title = $.trim(title);
-        return title;
-    }
-
-    function cleanURL(url) {
-        url = url.split(/[?#]/)[0]; // Strip query string
-        url = relativeToAbsoluteURL(url); // Convert to an absolute url if necessary
-        return url;
-    }
-
-    function isValidTrackURL(url) {
-        if(!url.match(/^(http|https):\/\/soundcloud\.com\/.+\/.+$/g)) return false;
-        if(url.match(/^(http|https):\/\/soundcloud\.com\/.+\/sets\/.+$/)) return false;
-        return true;
-    }
-
-    function isPreview($item) {
-        if($item.find(".sc-snippet-badge").exists()) {
-            $item = $item.find(".sc-snippet-badge");
-
-        } else if($item.parent("trackItem__additional").find(".sc-snippet-badge").exists()) {
-            $item = $item.parent("trackItem__additional").find(".sc-snippet-badge");
+        function cleanTitle(title) {
+            title = title.replace(/"/g, "'");
+            title = $.trim(title);
+            return title;
         }
 
-        return $item.eq(0).text() === "Preview";
-    }
-
-    function isGeoblocked($item) {
-        if($item.find(".g-geoblocked-icon").exists()) {
-            return true;
-
-        } else if($item.parent("trackItem__additional").find(".g-geoblocked-icon").exists()) {
-            return true;
-        }
-
-        return false;
-    }
-
-    function hasExternalFreeDownload($item) {
-        var $buylink = $item.parent().find('.soundActions__purchaseLink').eq(0),
-            strings = ['free download', 'free dl'],
-            websites = ['theartistunion', 'toneden', 'artistsunlimited.co', 'melodicsoundsnetwork.com', 'edmlead.net', 'click.dj', 'woox.agency', 'hypeddit.com', 'hive.co'],
-            hasExternalFreeDownload = false;
-
-        if($buylink.exists()) {
-            strings.forEach(function(elem) {
-                if($buylink.text().toLowerCase().indexOf(elem) !== -1) hasExternalFreeDownload = true;
-            });
-
-            websites.forEach(function(elem) {
-                if($buylink.attr('href').toLowerCase().indexOf(elem) !== -1) hasExternalFreeDownload = true;
-            });
-        }
-
-        return hasExternalFreeDownload;
-    }
-
-    function hasExternalBuyLink($item) {
-        var $buylink = $item.parent().find('.soundActions__purchaseLink').eq(0),
-            strings = ['buy', 'spotify', 'beatport', 'juno', 'stream'],
-            websites = ['lnk.to', 'open.spotify.com', 'spoti.fi', 'junodownload.com', 'beatport.com', 'itunes.apple.com', 'play.google.com', 'deezer.com', 'napster.com', 'music.microsoft.com'],
-            hasExternalFreeDownload = false;
-
-        if($buylink.exists()) {
-            strings.forEach(function(elem) {
-                if($buylink.text().toLowerCase().indexOf(elem) !== -1) hasExternalFreeDownload = true;
-            });
-
-            websites.forEach(function(elem) {
-                if($buylink.attr('href').toLowerCase().indexOf(elem) !== -1) hasExternalFreeDownload = true;
-            });
-        }
-
-        return hasExternalFreeDownload;
-    }
-
-    function relativeToAbsoluteURL(url) {
-        if(url.substr(0, 1) === '/')
-            return 'https://soundcloud.com'+url;
-        else
+        function cleanURL(url) {
+            url = url.split(/[?#]/)[0]; // Strip query string
+            url = relativeToAbsoluteURL(url); // Convert to an absolute url if necessary
             return url;
-    }
-
-    function makeGritter(id, title) {
-        var $wrapper = $("#gritter-notice-wrapper");
-
-        if(!$wrapper.exists()) {
-            $(document).find('body').append('<div id="gritter-notice-wrapper" class="top-right"></div>');
-            $wrapper = $("#gritter-notice-wrapper")
         }
 
-        $wrapper.append('<div id="gritter-item" class="gritter-item-wrapper"><div class="gritter-top"></div><div class="gritter-item"><div class="gritter-close" style="display: none;"></div><img src="https://i1.sndcdn.com/artworks-'+id+'-0-t50x50.jpg" class="gritter-image"><div class="gritter-with-image">Download of <span class="gritter-title">'+title+'</span><p> will start in a moment.</p></div><div style="clear:both"></div></div><div class="gritter-bottom"></div></div>');
+        function isValidTrackURL(url) {
+            if(!url.match(/^(http|https):\/\/soundcloud\.com\/.+\/.+$/g)) return false;
+            if(url.match(/^(http|https):\/\/soundcloud\.com\/.+\/sets\/.+$/)) return false;
+            return true;
+        }
 
-        setTimeout(function() {
-            $("#gritter-item").fadeOut();
-        }, 2000);
-    }
+        function relativeToAbsoluteURL(url) {
+            if(url.substr(0, 1) === '/')
+                return 'https://soundcloud.com'+url;
+            else
+                return url;
+        }
 
-    $.fn.exists = function () {
-        return this.length !== 0;
-    };
+    });
 
 })(jQuery);
