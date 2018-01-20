@@ -11,7 +11,7 @@
 // @include	    https://soundcloud.com/*
 // @grant       GM_addStyle
 // @grant       GM_openInTab
-// @version	1.1
+// @version	1.2
 // ==/UserScript==
 //-----------------------------------------------------------------------------------
 
@@ -23,6 +23,9 @@ jQuery.noConflict();
         $.fn.exists = function () {
             return this.length !== 0;
         };
+
+        /** Client ID **/
+        var clientId = 'DQskPX1pntALRzMp4HSxya3Mc0AO66Ro';
 
         /** Append stylesheet */
         var icon_buy = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAQAAACR313BAAAAg0lEQVQY02NgIAzU/qtuxSP9/4zOdxkhPAqcPqr9R4Uo5gXdRZd2eIwknXoAXXrZJiTp0tmokl6f/hsjSXfm4dHLwLDZUv+3y5fYN5VPZ907cO3leRS9QK/x/d/7f8H/5v9p/z3+a//nw/Ca6laYVxAsJOB6z/UeOgvZ+An/J6CzKAUAAatiLSilSl4AAAAASUVORK5CYII=";
@@ -269,7 +272,7 @@ jQuery.noConflict();
             }
 
             if(!isExternal && isValidTrackURL(url)) {
-                url = "https://mrvv.net/scdl/scdlSC.php?url=" + url;
+                url = "https://api.soundcloud.com/resolve.json?client_id=" + clientId + "&url=" + url;
 
                 $button.on("click", function() {
                     var id = $(this).attr('sc-id');
@@ -277,7 +280,7 @@ jQuery.noConflict();
                         new SoundCloudGritter(track, 'Download of <span class="gritter-title">'+track.title+'</span> will start in a moment.</div>', false, 3000);
 
                     $.get(url, function (data) {
-                        if (data.hasOwnProperty('error')) {
+                        if (data.hasOwnProperty('error') || !data.hasOwnProperty('stream_url')) {
                             var message = data.error;
 
                             if(track.isGeoblocked())
@@ -289,7 +292,7 @@ jQuery.noConflict();
                             console.error("Download failed: " + message, track);
 
                         } else {
-                            GM_openInTab("https://mrvv.net/scdl/scdlDL.php?url=" + data.dlfileurl, true);
+                            downloadUrl(data.stream_url + '?client_id=' + clientId);
                         }
                     }, "json");
                 });
@@ -482,6 +485,17 @@ jQuery.noConflict();
                 return 'https://soundcloud.com'+url;
             else
                 return url;
+        }
+
+        function downloadUrl(url) {
+            if (!$('.js-downloader').exists()) {
+                $('body').append('<a class="js-downloader" style="visibility: hidden; position: absolute"></a>');
+            }
+
+            var $downloader = $('.js-downloader');
+            $downloader.attr('href', url);
+            $downloader.attr('download', 'download');
+            $downloader[0].click();
         }
 
     });
